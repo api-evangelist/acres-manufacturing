@@ -1,23 +1,199 @@
 aid: acres-manufacturing
 name: Acres Manufacturing
-description: 'Acres Manufacturing is a company surfaced via the API Evangelist harvest backlog (source:
-  secondary-market) and added to the network as a stub for full-pipeline profiling.'
+description: >-
+  Acres Manufacturing Company (also trading as Acres 4.0), of Las Vegas, Nevada, builds Foundation —
+  a casino management system that connects directly to a slot machine's SAS port and streams every
+  gaming-floor event in real time. Foundation carries the operator's cashless, bonusing, ticketing,
+  loyalty and analytics products (FoundationHQ, Cashless Casino, Player Budget, Achievement Bonusing,
+  Ticket In Bonus Out, Video Poker Analyzer, Guardian and Kai), and it is sold as an open platform:
+  Acres publishes a Foundation App Store and gives third-party developers an event API onto the same
+  floor data its own applications consume. The public developer surface is the Foundation Event
+  Replay API — real-time and historical WebSocket streams of SAS 6.02 exception events, meter
+  movements, machine info and player-card events, documented per version in the company's own
+  acres4 GitHub organization — plus the AcresBLE iOS and Android SDKs, which let a partner mobile
+  app card a player in and fund or cash out a slot or table over Bluetooth Low Energy. Foundation
+  communication is TLS 1.3 and Acres states its APIs require mTLS for authentication.
 url: https://raw.githubusercontent.com/api-evangelist/acres-manufacturing/refs/heads/main/apis.yml
+image: https://acresmanufacturing.com/wp-content/uploads/2022/02/cropped-Acres_Submark_Gradient-192x192.png
 x-type: company
 x-source: harvest:secondary-market
-x-tier: stub
-x-tier-reason: harvest
+x-tier: profiled
+x-tier-reason: enrichment
+x-enrichment:
+  date: '2026-09-06'
+  status: enriched
+  artifacts_added: 12
+  pass: local-v3
+x-coverage:
+  state: covered
+  reason: null
+  detail: >-
+    Full public surface reached with no wall. The company publishes a real first-party API
+    reference in its own acres4 GitHub organization — the Foundation Event Replay API, two
+    WebSocket channels and an 80-packet-type data dictionary keyed to SAS 6.02 — plus two actively
+    maintained AcresBLE mobile SDKs. What it does NOT publish is any machine-readable contract:
+    no OpenAPI, AsyncAPI, GraphQL SDL, Postman collection, MCP server, agent card or /.well-known/
+    document was found on any host, and the documentation repository has had no commit since
+    2020-06-16.
+  evidence:
+  - url: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md
+    status: 200
+  - url: https://acresmanufacturing.com/faq/
+    status: 200
+  - url: https://acresmanufacturing.com/.well-known/security.txt
+    status: 404
+  - url: https://acres4.com/openapi.json
+    status: 200
+  checked: '2026-09-06'
 specificationVersion: '0.20'
 created: '2026-09-06'
 modified: '2026-09-06'
 tags:
-- Company
-apis: []
+- Casino Gaming
+- Casino Management System
+- Gaming Technology
+- Slot Machines
+- Cashless Payments
+- Real-Time Data
+- Event Streaming
+- WebSocket
+- Bluetooth Low Energy
+- Loyalty and Bonusing
+- Hospitality
+tags_raw:
+- casino-gaming
+- casino-management-system
+- gaming-technology
+- slot-machines
+- cashless-payments
+- real-time-data
+- event-streaming
+- websocket
+- bluetooth-low-energy
+- loyalty-and-bonusing
+- hospitality
+apis:
+- name: Foundation Event Replay API
+  description: >-
+    WebSocket streaming API onto the Foundation event bus. Two channels are documented: a real-time
+    event streamer that pushes every event as it is collected from the floor (backed by a rolling
+    cache of up to 10,000 events or 10 minutes, whichever is smaller, reachable with the start_idx
+    filter), and a historical event streamer that replays a bounded window by nanosecond Unix
+    timestamp or by global index. Both accept the same filter set as query parameters —
+    sas_codes (SAS 6.02 Appendix A Table A-1 exception codes, decimal), asset_number,
+    sas_serial_number, start_idx and limit — and both emit flattened JSON packets carrying a type,
+    the EGM serial and asset number, the player card number and host player id, event and cache
+    timestamps, a global idx ordering field, and per-packet data and meters maps. The host is
+    per-property: <property> is the subdomain of the casino running Foundation, so the base URL is
+    templated rather than a single vendor-operated endpoint. Requests that are not upgraded to a
+    WebSocket are rejected with HTTP 400.
+  humanURL: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md
+  baseURL: wss://{property}.kailabor.com/nex7/sas-reader/ws
+  x-baseurl-note: >-
+    Templated per casino property, exactly as the provider documents it — <property> is the
+    subdomain for the casino running Foundation (the docs' own example is mycasino.kailabor.com).
+    kailabor.com resolves (AWS-hosted, Route 53 nameservers) but has no root site; there is no
+    shared multi-tenant host to record and none was invented.
+  tags:
+  - Casino Gaming
+  - Event Streaming
+  - WebSocket
+  - Real-Time Data
+  - Slot Machines
+  tags_raw:
+  - casino-gaming
+  - event-streaming
+  - websocket
+  - real-time-data
+  - slot-machines
+  properties:
+  - type: Documentation
+    url: https://github.com/acres4/foundation-documentation
+  - type: APIReference
+    url: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md
+  - type: Webhooks
+    url: asyncapi/acres-manufacturing-foundation-events.yml
+  - type: Authentication
+    url: authentication/acres-manufacturing-authentication.yml
+  - type: Conventions
+    url: conventions/acres-manufacturing-conventions.yml
+  - type: RateLimits
+    url: rate-limits/acres-manufacturing-rate-limits.yml
+  - type: Lifecycle
+    url: lifecycle/acres-manufacturing-lifecycle.yml
+  - type: Conformance
+    url: conformance/acres-manufacturing-conformance.yml
+  - type: Examples
+    url: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/example_1.4.3.json
+- name: AcresBLE SDK (Bluetooth Low Energy)
+  description: >-
+    First-party Bluetooth Low Energy SDK, published for iOS (Swift package) and Android (Kotlin),
+    that lets a technology partner's mobile app talk directly to Acres BLE hardware on the casino
+    floor. Two controllers are documented: an electronic card-in controller that inserts and removes
+    a player card at an EGM's player interface (writing the card track and reading the busy
+    characteristic), and a slot-and-table controller that finds a device advertising the machine
+    information service above -65 dBm, reads its SAS serial, and — for table games — funds a table,
+    requests a dealer cash-out, and cancels a suggested cash-out. There is no HTTP surface here; the
+    contract is the BLE GATT characteristics the SDK wraps, so no baseURL is recorded.
+  humanURL: https://github.com/acres4/ios-sdk
+  tags:
+  - Bluetooth Low Energy
+  - Cashless Payments
+  - Casino Gaming
+  - Mobile SDK
+  tags_raw:
+  - bluetooth-low-energy
+  - cashless-payments
+  - casino-gaming
+  - mobile-sdk
+  properties:
+  - type: SourceCode
+    url: https://github.com/acres4/ios-sdk
+  - type: Documentation
+    url: https://github.com/acres4/ios-sdk/blob/main/README.md
+  - type: SDKs
+    url: packages/acres-manufacturing-packages.yml
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
 common:
+- type: DomainSecurity
+  url: security/acres-manufacturing-domain-security.yml
 - type: Website
-  url: https://forgeglobal.com/acres-manufacturing_stock/
+  url: https://acresmanufacturing.com
+- type: Documentation
+  url: https://github.com/acres4/foundation-documentation
+- type: APIReference
+  url: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md
+- type: GitHubOrganization
+  url: https://github.com/acres4
+- type: Blog
+  url: https://acresmanufacturing.com/blog/
+- type: FAQ
+  url: https://acresmanufacturing.com/faq/
+- type: Contact
+  url: https://acresmanufacturing.com/contact-us/
+- type: PrivacyPolicy
+  url: https://acresmanufacturing.com/privacy/
+- type: Packages
+  url: packages/acres-manufacturing-packages.yml
+- type: SDKs
+  url: packages/acres-manufacturing-packages.yml
+- type: Webhooks
+  url: asyncapi/acres-manufacturing-foundation-events.yml
+- type: Authentication
+  url: authentication/acres-manufacturing-authentication.yml
+- type: Conventions
+  url: conventions/acres-manufacturing-conventions.yml
+- type: RateLimits
+  url: rate-limits/acres-manufacturing-rate-limits.yml
+- type: Lifecycle
+  url: lifecycle/acres-manufacturing-lifecycle.yml
+- type: Conformance
+  url: conformance/acres-manufacturing-conformance.yml
+- type: Plans
+  url: plans/acres-manufacturing-plans-pricing.yml
+- type: LLMsTxt
+  url: llms/acres-manufacturing-llms.txt

@@ -1,0 +1,71 @@
+generated: '2026-09-06'
+method: searched
+source: >-
+  https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md and
+  https://acresmanufacturing.com/faq/
+summary: >-
+  The Foundation Event Replay API's contract IS a projection of a domain standard: every event type
+  it publishes is a Slot Accounting System (SAS) 6.02 exception code or poll, its meter names are
+  the SAS 6.02 Appendix C Table C-7 meters, and its filter parameter documentation cites the SAS
+  specification by section. That is a declared domain-standard signature in the contract itself,
+  not a marketing claim. No cross-cutting web standards (OAuth 2.0, OpenID Connect, RFC 9457,
+  RFC 8594, RFC 9116) are claimed or observed.
+conformance:
+- id: sas-6.02
+  name: Slot Accounting System (SAS) Protocol version 6.02
+  domain_standard: true
+  conforms: true
+  evidence: >-
+    https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md — event
+    types are named SAS_EVENT_CODE_<hex>_<name> and SAS_POLL_<hex>_<name>; the sas_codes filter is
+    documented as "real time SAS exception codes ... found in Slot Accounting System Protocol
+    Version 6.02 Appendix A Table A-1"; meter names are "any of the meters mentioned in Slot
+    Accounting System Protocol Version 6.02 Appendix C Table C-7".
+  detail: >-
+    56 SAS exception codes, 13 SAS poll responses and 190 SAS/Foundation meter names are enumerated
+    in the reference. Acres also states any machine running SAS 6.02 or greater is compatible
+    (https://acresmanufacturing.com/faq/), and describes changing the credit meter through the SAS
+    AFT (Advanced Funds Transfer) function.
+  scope: Foundation Event Replay API and the Foundation hardware interface to the EGM.
+- id: rfc6455-websocket
+  name: The WebSocket Protocol (RFC 6455)
+  conforms: true
+  evidence: >-
+    "Users must upgrade all requests to a websocket to avoid a 400 error from the server" —
+    https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md
+- id: tls-1.3
+  name: TLS 1.3 transport
+  conforms: true
+  evidence: '"All Foundation network communication utilizes the latest encryption standards (TLS 1.3)" — https://acresmanufacturing.com/faq/'
+- id: mtls
+  name: Mutual TLS client authentication
+  conforms: true
+  evidence: '"APIs require mTLS for authentication" — https://acresmanufacturing.com/faq/'
+  note: Asserted on the FAQ; not described in the API reference.
+- id: oauth2
+  name: OAuth 2.0
+  conforms: false
+  evidence: No OAuth flow, scope or token endpoint appears in any published Acres document; /.well-known/oauth-authorization-server 404s on every Acres host.
+- id: oidc
+  name: OpenID Connect
+  conforms: false
+  evidence: /.well-known/openid-configuration returns 404 on acresmanufacturing.com and an HTML catch-all on acres4.com.
+- id: rfc9457
+  name: Problem Details for HTTP APIs (RFC 9457)
+  conforms: false
+  evidence: No error envelope of any kind is published; the only documented failure is a bare HTTP 400.
+- id: rfc8594
+  name: The Sunset HTTP Header (RFC 8594)
+  conforms: false
+  evidence: Deprecations are noted in prose in the reference; no Sunset or Deprecation header is documented.
+- id: rfc9116
+  name: security.txt (RFC 9116)
+  conforms: false
+  evidence: https://acresmanufacturing.com/.well-known/security.txt returned 404 on 2026-09-06.
+certifications:
+  published: false
+  note: >-
+    No trust center, SOC 2, ISO 27001 or PCI attestation is published on the Acres website. Gaming
+    laboratory certification is implied by the MachineInfo packet carrying a GLIConfirmation field
+    (a Gaming Laboratories International confirmation number reported by the host system), but that
+    is a property's machine record, not an Acres certification, so no Compliance pointer is emitted.

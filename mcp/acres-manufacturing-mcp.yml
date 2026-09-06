@@ -1,0 +1,23 @@
+generated: '2026-09-06'
+method: searched
+source: >-
+  GitHub org https://github.com/acres4 (7 public repositories, none MCP-related), the Acres website
+  and documentation repository, and web search for an Acres/Foundation MCP server.
+status: none
+summary: >-
+  Acres ships no MCP server, hosted or local, and none is announced. No candidate tool list was
+  derived either: the only public contract is a WebSocket event stream with no operations to map to
+  tools, and inventing an endpoint or a tool surface here would read as a verified agent surface
+  that does not exist. NO MCPServer POINTER IS EMITTED.
+deployment:
+  mode: none
+  endpoint: null
+  install: null
+  package: null
+  auth: unknown
+  verified: searched
+tools: []
+searched:
+- https://github.com/acres4
+- https://acresmanufacturing.com/
+- registry.npmjs.org search "acres4"

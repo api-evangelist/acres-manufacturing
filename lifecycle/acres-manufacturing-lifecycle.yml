@@ -1,0 +1,84 @@
+generated: '2026-09-06'
+method: searched
+source: >-
+  https://github.com/acres4/foundation-documentation (folder-per-version layout, commit history read
+  from the GitHub API 2026-09-06) and the 1.4 reference's inline deprecation/removal notes.
+summary: >-
+  Acres versions the Foundation Event Replay API as a folder per release in its documentation
+  repository and marks changes inline in the reference ("Deprecated", "Removed in 1.4.3", "will be
+  removed soon"). There is no dated changelog, no deprecation policy, no Sunset/Deprecation header
+  contract, no SLA and no status page. The documentation repository has not been touched since
+  2020-06-16, while the AcresBLE SDK repositories were last pushed 2026-08-18 — the event API
+  reference is the stale surface, not the organization.
+versioning:
+  scheme: major.minor(.patch) — one documentation folder per minor version
+  current_documented: '1.4.3'
+  discovery: >-
+    Not negotiable by the client. No version header, path segment or query parameter is documented;
+    the version in force is whatever Foundation build the casino property runs.
+versions:
+- version: '1.2'
+  docs: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.2/usage.md
+  documented: '2019-08-13'
+  notes: Historical replay channel only.
+- version: '1.3'
+  docs: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.3/usage.md
+  documented: '2020-06-16'
+  notes: Adds the real-time replay channel and the PACKET_SAS_METERS_CHANGE meter-movement packet.
+- version: '1.4'
+  docs: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md
+  documented: '2020-06-16'
+  notes: >-
+    Current. Adds event_time, sas_queue_index, hdr_id, dest and device_serial_number to the packet
+    envelope; 1.4.2 and 1.4.3 example payloads are published alongside the reference.
+deprecations:
+- item: raw-json query parameter
+  status: deprecated
+  since: '1.4.3'
+  reason: The API only sends data in JSON form starting in 1.4.3, so the flag no longer selects anything.
+  replacement: none needed
+- item: start_idx / end_idx on the historical channel
+  status: removed
+  since: '1.4.3'
+  replacement: start / end nanosecond timestamps
+- item: MIBTime field in the data map
+  status: deprecated
+  since: '1.4'
+  note: Reference says "will be removed soon"; no date given.
+  replacement: event_time in the packet envelope
+breaking_changes:
+- version: '1.4.3'
+  change: >-
+    Packets are streamed as simple flat packets rather than as an array of flat packets. Any
+    consumer written against 1.4.2 or earlier that unwraps an array breaks.
+  announced_in: the reference itself, undated
+deprecation_policy:
+  published: false
+  note: >-
+    Individual deprecations are recorded, but no policy states how long a deprecated field or
+    parameter is supported, how notice is given, or whether Deprecation/Sunset headers (RFC 8594)
+    are ever emitted.
+sunset_headers: not documented
+sla:
+  published: false
+status_page:
+  published: false
+  probes:
+  - url: https://status.acresmanufacturing.com/
+    status: 0
+    note: DNS does not resolve.
+  - url: https://status.acres4.com/
+    status: 0
+    note: DNS does not resolve.
+  - url: https://acresmanufacturing.statuspage.io/
+    status: 200
+    note: >-
+      Resolves to Atlassian's own Statuspage marketing page, not a tenant status page — a false
+      positive, recorded so a later run does not re-credit it.
+support:
+  email: support@acresmanufacturing.com
+  source: https://acresmanufacturing.com/privacy/
+  page: https://acresmanufacturing.com/support/
+  page_note: >-
+    The /support/ page returns HTTP 200 but renders no content below the site chrome, so it is not
+    recorded as a support channel pointer.

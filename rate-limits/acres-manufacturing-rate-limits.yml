@@ -1,0 +1,57 @@
+generated: '2026-09-06'
+method: searched
+source: >-
+  https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md —
+  "Performance" section and the real-time channel's cache statement.
+docs: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md
+summary: >-
+  Acres publishes no per-key or per-account HTTP rate limit, no RateLimit-*/Retry-After headers and
+  no 429 status. What it does publish — and this is real, usable runtime guidance — is a
+  CLIENT-SPEED-DEPENDENT ceiling on the historical replay `limit` parameter, plus the size of the
+  real-time replay cache. The constraint is throughput, not quota: a client that consumes packets
+  too slowly silently misses packets rather than being throttled.
+enforcement: none documented
+exhaustion_status_code: null
+response_headers: []
+retry_after: not documented
+limits:
+- scope: per-connection (historical replay)
+  window: per query
+  limit: 1000000
+  unit: packets
+  condition: client processing 135µs/packet (~7,400 packets/second)
+  note: Maximum tested query limit at this client speed.
+- scope: per-connection (historical replay)
+  window: per query
+  limit: 500000
+  unit: packets
+  condition: client processing 185µs/packet (~5,400 packets/second)
+- scope: per-connection (historical replay)
+  window: per query
+  limit: 250000
+  unit: packets
+  condition: client processing 250µs/packet (~4,000 packets/second)
+- scope: per-connection (historical replay)
+  window: per query
+  limit: 100000
+  unit: packets
+  condition: client processing 490µs/packet (~2,000 packets/second)
+- scope: per-connection (historical replay)
+  window: per query
+  limit: 50000
+  unit: packets
+  condition: client processing 6ms/packet (~165 packets/second)
+- scope: per-connection (real-time replay cache)
+  window: rolling
+  limit: 10000
+  unit: events
+  condition: or 10 minutes of events, whichever cache is smaller
+  note: >-
+    Bounds how far back start_idx can reach on the real-time channel; older events must be read
+    from the historical channel.
+server_throughput:
+  rate: ~7,400 packets/second (~135µs/packet) observed by the provider in its own testing
+  degradation: >-
+    "Slower clients may not receive all packets the server has sent" — back-pressure is not
+    signalled to the client, so loss is silent.
+limit_count: 6

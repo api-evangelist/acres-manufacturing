@@ -64,5 +64,25 @@
 > Full detail: **[Where this data comes from](https://apievangelist.com/about/where-our-data-comes-from)**
 <!-- API-EVANGELIST-PROVENANCE:END -->
 
-Acres Manufacturing is a company surfaced via the API Evangelist harvest backlog (source: secondary-market) and added to the network as a stub for full-pipeline profiling.
-- https://forgeglobal.com/acres-manufacturing_stock/
+Acres Manufacturing Company (also trading as Acres 4.0), of Las Vegas, Nevada, builds **Foundation** —
+a casino management system that connects directly to a slot machine's SAS port and streams every
+gaming-floor event in real time. Its products include FoundationHQ, Cashless Casino, Player Budget,
+Achievement Bonusing, Ticket In Bonus Out (TIBO), Video Poker Analyzer, Guardian and Kai.
+
+## Public developer surface
+
+- **Foundation Event Replay API** — two WebSocket channels (real-time and historical replay) onto the
+  Foundation event bus, documented per version at
+  [acres4/foundation-documentation](https://github.com/acres4/foundation-documentation). 80 documented
+  packet types and 190 meter names, all keyed to the Slot Accounting System (SAS) 6.02 protocol. The
+  host is per casino property: `wss://{property}.kailabor.com/nex7/sas-reader/ws/...`
+- **AcresBLE SDKs** — first-party [iOS](https://github.com/acres4/ios-sdk) and
+  [Android](https://github.com/acres4/android-sdk) Bluetooth Low Energy libraries for player card-in
+  and slot/table funding and cash-out.
+
+No OpenAPI, AsyncAPI, GraphQL SDL, Postman collection, MCP server, A2A agent card or `/.well-known/`
+document is published on any Acres host. Acres states on its FAQ that Foundation communication uses
+TLS 1.3 and that its APIs require mTLS for authentication.
+
+- Website: https://acresmanufacturing.com
+- Secondary-market listing this profile was harvested from: https://forgeglobal.com/acres-manufacturing_stock/

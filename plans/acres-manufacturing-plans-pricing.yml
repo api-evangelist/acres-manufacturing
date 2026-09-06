@@ -1,0 +1,23 @@
+generated: '2026-09-06'
+method: searched
+source: https://acresmanufacturing.com/pricing/
+summary: >-
+  Acres publishes no pricing. The site has a /pricing/ page and it returns HTTP 200, but the page
+  ships the theme's unedited demo content — Lorem ipsum body copy and a gym membership table
+  ("Crossfit 3 times a week", "Zumba Classes", "Sauna access") with no prices, currency or product
+  names. It is an unpublished template, not a price list, so no Pricing pointer is emitted for it.
+  Foundation is sold to casino operators through a sales conversation (the site's calls to action
+  are "Get Started" and "Contact"), and there is no self-service or developer-facing plan.
+plan_count: 0
+pricing_model: contact-sales
+currency: null
+free_tier: false
+trial: false
+evidence:
+- url: https://acresmanufacturing.com/pricing/
+  status: 200
+  note: Unedited theme demo content; contains no Acres product or price.
+- url: https://acresmanufacturing.com/contact-us/
+  status: 200
+  note: The actual commercial entry point.
+plans: []

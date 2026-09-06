@@ -1,0 +1,94 @@
+generated: '2026-09-06'
+method: probed
+source: live GET of /.well-known/* , /llms.txt and spec paths on every Acres host, 2026-09-06
+summary: >-
+  Acres serves no /.well-known/ discovery document on any host. acresmanufacturing.com returns a
+  clean 404 for every path. acres4.com answers HTTP 200 with the site's HTML shell for every path
+  under /.well-known/ and for /openapi.json, /swagger.json and /api-docs — a catch-all soft-200,
+  not a document, and it is recorded as a miss so no later run credits it. The API host itself
+  (wss://{property}.kailabor.com) is per-casino and has no probeable root: kailabor.com resolves to
+  AWS addresses but refuses connections, and no property subdomain was guessed.
+  NO POINTER IS EMITTED for this file — every probe missed, and a WellKnown pointer would assert a
+  surface the provider does not serve.
+hosts:
+- host: https://acresmanufacturing.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+  - path: /llms.txt
+    status: 404
+  - path: /openapi.json
+    status: 404
+  - path: /swagger.json
+    status: 404
+  - path: /api-docs
+    status: 404
+- host: https://www.acresmanufacturing.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 404
+  - path: /.well-known/oauth-authorization-server
+    status: 404
+  - path: /.well-known/api-catalog
+    status: 404
+  - path: /.well-known/ai-plugin.json
+    status: 404
+  - path: /.well-known/agent-card.json
+    status: 404
+  - path: /.well-known/agent.json
+    status: 404
+- host: https://acres4.com
+  documents:
+  - path: /.well-known/security.txt
+    status: 404
+  - path: /.well-known/openid-configuration
+    status: 200
+    note: HTML site shell, not a document — catch-all soft-200. Treated as a miss.
+  - path: /.well-known/oauth-authorization-server
+    status: 200
+    note: HTML site shell, not a document — catch-all soft-200. Treated as a miss.
+  - path: /.well-known/api-catalog
+    status: 200
+    note: HTML site shell, not a document — catch-all soft-200. Treated as a miss.
+  - path: /.well-known/ai-plugin.json
+    status: 200
+    note: HTML site shell, not a document — catch-all soft-200. Treated as a miss.
+  - path: /.well-known/agent-card.json
+    status: 200
+    note: HTML site shell, not a JSON AgentCard — rejected. No agent card exists.
+  - path: /.well-known/agent.json
+    status: 200
+    note: HTML site shell, not a JSON AgentCard — rejected. No agent card exists.
+  - path: /llms.txt
+    status: 404
+  - path: /openapi.json
+    status: 200
+    note: HTML site shell, does not parse as OpenAPI — rejected.
+  - path: /swagger.json
+    status: 200
+    note: HTML site shell, does not parse as OpenAPI — rejected.
+- host: https://kailabor.com
+  documents:
+  - path: /
+    status: 0
+    note: >-
+      DNS resolves (AWS addresses, Route 53 nameservers) but the connection is refused. The
+      documented API host is per-property (wss://{property}.kailabor.com) and no property
+      subdomain was guessed, so no /.well-known probe against a live tenant was possible.
+agent_card_found: false
+security_txt_found: false
+api_catalog_found: false

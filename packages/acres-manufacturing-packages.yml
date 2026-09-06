@@ -1,0 +1,72 @@
+generated: '2026-09-06'
+method: searched
+source: >-
+  GitHub org https://github.com/acres4 (repository, tag and release metadata read from the GitHub
+  API on 2026-09-06), plus registry probes against npm, PyPI, Maven Central, JitPack, RubyGems,
+  crates.io, NuGet and pkg.go.dev.
+notes: >-
+  Acres publishes two first-party client SDKs — AcresBLE for iOS (a Swift package) and AcresBLE for
+  Android (a Kotlin Android library) — and both are distributed as SOURCE from the acres4 GitHub
+  organization only. Neither is on a package registry: Maven Central and npm return nothing for
+  "acres"/"acres4", JitPack knows github.com/acres4/android-sdk but has never built a release, and
+  the iOS package is consumed by pointing Swift Package Manager at the repository URL. Neither repo
+  carries a single git tag or GitHub release, so there is no version a consumer can pin and no
+  published date to read; both were last pushed 2026-08-18. That is the finding, recorded as
+  version: null rather than guessed. There is no client library for the Foundation Event Replay
+  API in any language — the provider's reference shows a raw WebSocket URL and notes that Acres
+  tested it with an internal Go implementation that is not published.
+registry_probes:
+- registry: npm
+  query: acres4
+  result: no first-party package
+- registry: maven-central
+  query: acres
+  result: no first-party artifact
+- registry: jitpack
+  query: com.github.acres4/android-sdk
+  result: repository known, zero builds
+- registry: pypi
+  result: not applicable — no Python SDK published
+packages:
+- name: AcresBLE (iOS)
+  language: swift
+  registry: github
+  distribution: source
+  url: https://github.com/acres4/ios-sdk
+  repository: https://github.com/acres4/ios-sdk
+  install: 'Swift Package Manager: add https://github.com/acres4/ios-sdk as a package dependency (product "AcresBLE")'
+  version: null
+  published: null
+  version_note: >-
+    No git tags and no GitHub releases on the repository, so SPM can only track a branch or a
+    commit — a consumer cannot pin a released version. Last commit 2026-08-18.
+  last_commit: '2026-08-18'
+  platforms: [iOS 14+]
+  swift_tools_version: '5.6'
+  description: >-
+    Bluetooth Low Energy SDK for technology partners: ElectronicCardInController (insertPlayerCard,
+    removePlayerCard) and SlotAndTableController (findDevice, fundTable, cashOutTable,
+    cancelCashOut, disconnectFromDevice). Ships an example app, AcresBLEDemo.
+  official: true
+  http_status: 200
+- name: AcresBLE (Android)
+  language: kotlin
+  registry: github
+  distribution: source
+  url: https://github.com/acres4/android-sdk
+  repository: https://github.com/acres4/android-sdk
+  install: 'Gradle: consume the `ble` module from the repository (namespace com.acres.ble); no published Maven coordinate'
+  version: null
+  published: null
+  version_note: >-
+    No git tags, no GitHub releases and no Maven/JitPack artifact — the library module is built
+    from source. Last commit 2026-08-18.
+  last_commit: '2026-08-18'
+  description: >-
+    Android sibling of AcresBLE: CardReaderDeviceManager and SlotAndTableDeviceManager expose
+    insertPlayerCard, fundTable, cashOut, cancel and disconnectDevice over BLE, built on the
+    Nordic BLE libraries. Ships a sample app module.
+  official: true
+  http_status: 200
+package_count: 2
+official_count: 2

@@ -1,0 +1,678 @@
+generated: '2026-09-06'
+method: searched
+source: https://github.com/acres4/foundation-documentation/blob/master/apis/event/1.4/usage.md — the Foundation
+  Event Replay API reference published by Acres in its own acres4 GitHub organization (versions 1.2, 1.3
+  and 1.4 are each documented in their own folder; 1.4 is the current one).
+name: Foundation Event Replay API — event surface
+description: 'Acres publishes no AsyncAPI document. This is the event catalog read verbatim out of the
+  provider''s own API reference: two WebSocket channels and the 80 packet types their data dictionary
+  defines. It is recorded as a Webhooks/event-surface artifact rather than as a generated AsyncAPI spec,
+  because API Evangelist does not author contracts on a provider''s behalf — every event, field and channel
+  parameter below appears in the linked document.'
+spec_published: false
+spec_format: none
+transport: websocket
+payload: application/json
+delivery: Server-push over a client-initiated WebSocket. This is not an HTTP callback/webhook surface
+  — the consumer dials out to the property's Foundation host and the server streams packets. A request
+  that is not upgraded to a WebSocket is rejected with HTTP 400.
+host_pattern: wss://{property}.kailabor.com
+host_note: '{property} is the subdomain of the casino running Foundation, so every consumer connects to
+  their own operator''s host. There is no shared vendor endpoint to probe and none was invented.'
+ordering:
+  field: idx
+  description: Monotonically increasing uint64 the provider uses to apply a global ordering to every packet
+    in the stream. sas_queue_index orders events that passed through a single Bridge board and hdr_id
+    orders events through the same GMI.
+channels:
+- id: real-time-event-streamer
+  path: /nex7/sas-reader/ws/real-time-event-streamer
+  operation: subscribe
+  summary: Live stream of floor events as the collector receives them.
+  replay_buffer: Server keeps a cache of up to 10,000 events or 10 minutes, whichever is smaller; start_idx
+    reads slightly into the past.
+  parameters:
+  - name: sas_codes
+    description: Comma-delimited real-time SAS exception codes (decimal) to filter on; the full list is
+      SAS 6.02 Appendix A Table A-1.
+  - name: asset_number
+    description: Comma-delimited asset numbers. OR'd with sas_serial_number when both are set.
+  - name: sas_serial_number
+    description: Comma-delimited SAS serial numbers. OR'd with asset_number when both are set.
+  - name: start_idx
+    description: Global idx to start reading from.
+  - name: raw-json
+    description: Deprecated — the API only sends JSON from 1.4.3 onward.
+    deprecated: true
+  example: wss://mycasino.kailabor.com/nex7/sas-reader/ws/real-time-event-streamer?raw-json=true&start_idx=161526
+- id: historical-event-streamer
+  path: /nex7/sas-reader/ws/historical-event-streamer
+  operation: subscribe
+  summary: Bounded replay of the event history.
+  parameters:
+  - name: start
+    description: Start of the window, nanoseconds since the Unix epoch.
+  - name: end
+    description: End of the window, nanoseconds since the Unix epoch.
+  - name: limit
+    description: Maximum number of packets to process before sending to the client.
+  - name: sas_codes
+    description: Comma-delimited real-time SAS exception codes (decimal).
+  - name: asset_number
+    description: Comma-delimited asset numbers. OR'd with sas_serial_number.
+  - name: sas_serial_number
+    description: Comma-delimited SAS serial numbers. OR'd with asset_number.
+  - name: start_idx
+    description: Global idx lower bound. Removed in 1.4.3.
+    removed_in: 1.4.3
+  - name: end_idx
+    description: Global idx upper bound. Removed in 1.4.3.
+    removed_in: 1.4.3
+  - name: raw-json
+    description: Deprecated — the API only sends JSON from 1.4.3 onward.
+    deprecated: true
+  example: wss://mycasino.kailabor.com/nex7/sas-reader/ws/historical-event-streamer?start=1561705200000000000&end=1562184823000000000&limit=50000
+envelope:
+  description: Flattened JSON packet. Every packet other than MachineInfo and PlayerInfo carries these
+    top-level fields.
+  fields:
+    type: The type of data carried in this packet (the event catalog below).
+    sas_serial_number: Serial number of the EGM at which the event originated, if any.
+    player_card_number: Card number of the player to associate with this event, if any.
+    asset_number: Asset number of the gaming machine, if any.
+    host_id_player: Unique player identifier according to the player-tracking (host) system.
+    idx: Monotonically increasing global ordering index.
+    cache_time: Millisecond Unix epoch at which the global event collector received the event.
+    event_time: Millisecond Unix epoch at which the Machine Interface Board received the event.
+    sas_queue_index: Monotonic index of events through a single Bridge board.
+    hdr_id: Index of events through the same GMI.
+    dest: Index of the Bridge board component the event originated from.
+    device_serial_number: Serial number of the Foundation device (GMI, player-tracking unit, Bluetooth
+      transceiver).
+    data: Per-type map of event fields.
+    meters: Map of machine meters.
+  standard_meters:
+  - CoinIn
+  - CoinOut
+  - CurrentCredits
+  - GamesPlayed
+  - GamesWon
+  - HandpayCancelCredit
+  - Jackpot
+  common_data_fields:
+    MIBTime: Deprecated in the reference — "will be removed soon".
+    SASEvent: The SAS exception code for this real-time SAS event.
+    SASPoll: The code sent to the gaming machine to request information.
+meter_change:
+  packet: PACKET_SAS_METERS_CHANGE
+  since: '1.3'
+  description: Reports meter movement as <meter name>:<meter value> pairs, where the meter name is any
+    meter from SAS 6.02 Appendix C Table C-7 or a standard Foundation data field. The reference lists
+    190 meter names Foundation uses.
+  meter_names_documented: 190
+pii_note: The PlayerInfo packet carries personal data (first and last name, birth date, gender, zip code,
+  membership tier, banned flag, theoretical win). Named here only as a schema fact for integrators and
+  regulators; no player data was collected. The provider's published example payloads (example_1.4.2.json,
+  example_1.4.3.json) contain machine meter packets only.
+event_count: 80
+events:
+- type: CriticalMeterMovement
+  summary: Critical Meter Movement
+  category: meters
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+  - MIBTime
+- type: MachineInfo
+  summary: Machine Info
+  category: entity-snapshot
+  standard_fields_only: false
+  data_fields:
+  - Bank
+  - Crc
+  - Denom
+  - EndDate
+  - HostDeviceID
+  - Paylines
+  - PurchaseDate
+  - SasSerialNumber
+  - Seat
+  - AssetNumber
+  - CabinetType
+  - LastUpdate
+  - Model
+  - ProgramNumber
+  - Reels
+  - SealNumber
+  - TokenDenom
+  - GLIConfirmation
+  - GameTheme
+  - HoldPct
+  - Mfr
+  - Section
+  - SerialNumber
+  - StartDate
+- type: PlayerInfo
+  summary: Player Info
+  category: entity-snapshot
+  standard_fields_only: false
+  data_fields:
+  - LastEventTime
+  - LastLocation
+  - LastName
+  - LoyaltyTierStr
+  - Banned
+  - BirthDate
+  - CacheTime
+  - CardNumber
+  - ZipCode
+  - ZipExt
+  - HostClubNumber
+  - MembershipTierStr
+  - Theo
+  - Crc
+  - FirstName
+  - Gender
+  - HostIdPlayer
+- type: SAS_EVENT_CODE_11_SLOT_DOOR_WAS_OPENED
+  sas_exception_code: '11'
+  summary: Slot door was opened
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_12_SLOT_DOOR_WAS_CLOSED
+  sas_exception_code: '12'
+  summary: Slot door was closed
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_13_DROP_DOOR_WAS_OPENED
+  sas_exception_code: '13'
+  summary: Drop door was opened
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_14_DROP_DOOR_WAS_CLOSED
+  sas_exception_code: '14'
+  summary: Drop door was closed
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_15_CARD_CAGE_WAS_OPENED
+  sas_exception_code: '15'
+  summary: Card cage was opened
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_16_CARD_CAGE_WAS_CLOSED
+  sas_exception_code: '16'
+  summary: Card cage was closed
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_17_AC_POWER_WAS_APPLIED_TO_GAMING_MACHINE
+  sas_exception_code: '17'
+  summary: Ac power was applied to gaming machine
+  category: power
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_18_AC_POWER_WAS_LOST_FROM_GAMING_MACHINE
+  sas_exception_code: '18'
+  summary: Ac power was lost from gaming machine
+  category: power
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_19_CASHBOX_DOOR_WAS_OPENED
+  sas_exception_code: '19'
+  summary: Cashbox door was opened
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_1A_CASHBOX_DOOR_WAS_CLOSED
+  sas_exception_code: 1A
+  summary: Cashbox door was closed
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_1B_CASHBOX_WAS_REMOVED
+  sas_exception_code: 1B
+  summary: Cashbox was removed
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_1C_CASHBOX_WAS_INSTALLED
+  sas_exception_code: 1C
+  summary: Cashbox was installed
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_1D_BELLY_DOOR_WAS_OPENED
+  sas_exception_code: 1D
+  summary: Belly door was opened
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_1E_BELLY_DOOR_WAS_CLOSED
+  sas_exception_code: 1E
+  summary: Belly door was closed
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_20_GENERAL_TILT
+  sas_exception_code: '20'
+  summary: General tilt
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_27_CASHBOX_FULL_DETECTED
+  sas_exception_code: '27'
+  summary: Cashbox full detected
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_28_BILL_JAM
+  sas_exception_code: '28'
+  summary: Bill jam
+  category: bill-acceptor
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_29_BILL_ACCEPTOR_HARDWARE_FAILURE
+  sas_exception_code: '29'
+  summary: Bill acceptor hardware failure
+  category: bill-acceptor
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_2B_BILL_REJECTED
+  sas_exception_code: 2B
+  summary: Bill rejected
+  category: bill-acceptor
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_2F_BILL_ACCEPTOR_VERSION_CHANGED
+  sas_exception_code: 2F
+  summary: Bill acceptor version changed
+  category: bill-acceptor
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_32_CMOS_RAM_ERROR
+  sas_exception_code: '32'
+  summary: Cmos ram error
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_34_EEPROM_ERROR
+  sas_exception_code: '34'
+  summary: Eeprom error
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_3C_OPERATOR_CHANGED_OPTIONS
+  sas_exception_code: 3C
+  summary: Operator changed options
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_3D_A_CASH_OUT_TICKET_HAS_BEEN_PRINTED
+  sas_exception_code: 3D
+  summary: A cash out ticket has been printed
+  category: ticketing-and-printer
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_42_REEL_2_TILT
+  sas_exception_code: '42'
+  summary: Reel 2 tilt
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_43_REEL_3_TILT
+  sas_exception_code: '43'
+  summary: Reel 3 tilt
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_4F_BILL_ACCEPTED
+  sas_exception_code: 4F
+  summary: Bill accepted
+  category: bill-acceptor
+  standard_fields_only: false
+  data_fields:
+  - Bills
+  - CountryCode
+  - DenomCode
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_51_HANDPAY_IS_PENDING
+  sas_exception_code: '51'
+  summary: Handpay is pending
+  category: handpay-and-jackpot
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_52_HANDPAY_WAS_RESET
+  sas_exception_code: '52'
+  summary: Handpay was reset
+  category: handpay-and-jackpot
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_53_NO_PROGRESSIVE_INFORMATION_HAS_BEEN_RECEIVED_FOR_5_SECONDS
+  sas_exception_code: '53'
+  summary: No progressive information has been received for 5 seconds
+  category: handpay-and-jackpot
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_54_PROGRESSIVE_WIN
+  sas_exception_code: '54'
+  summary: Progressive win
+  category: handpay-and-jackpot
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_60_PRINTER_COMMUNICATION_ERROR
+  sas_exception_code: '60'
+  summary: Printer communication error
+  category: ticketing-and-printer
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_61_PRINTER_PAPER_OUT_ERROR
+  sas_exception_code: '61'
+  summary: Printer paper out error
+  category: ticketing-and-printer
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_66_CASH_OUT_BUTTON_PRESSED
+  sas_exception_code: '66'
+  summary: Cash out button pressed
+  category: game-play
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_70_EVENT_BUFFER_OVERFLOW
+  sas_exception_code: '70'
+  summary: Event buffer overflow
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_71_CHANGE_LAMP_ON
+  sas_exception_code: '71'
+  summary: Change lamp on
+  category: attendant
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_72_CHANGE_LAMP_OFF
+  sas_exception_code: '72'
+  summary: Change lamp off
+  category: attendant
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_74_PRINTER_PAPER_LOW
+  sas_exception_code: '74'
+  summary: Printer paper low
+  category: ticketing-and-printer
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_78_PRINTER_CARRIAGE_JAMMED
+  sas_exception_code: '78'
+  summary: Printer carriage jammed
+  category: ticketing-and-printer
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_7B_BILL_VALIDATOR
+  sas_exception_code: 7B
+  summary: Bill validator
+  category: bill-acceptor
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_7E_GAME_HAS_STARTED
+  sas_exception_code: 7E
+  summary: Game has started
+  category: game-play
+  standard_fields_only: false
+  data_fields:
+  - ProgressiveGroup
+  - TotalCoinInMeter
+  - WagerType
+  - CreditsWagered
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_7F_GAME_HAS_ENDED
+  sas_exception_code: 7F
+  summary: Game has ended
+  category: game-play
+  standard_fields_only: false
+  data_fields:
+  - GameWin
+  - HostIDPlayer
+- type: SAS_EVENT_CODE_82_DISPLAY_METERS_OR_ATTENDANT_MENU_HAS_BEEN_ENTERED
+  sas_exception_code: '82'
+  summary: Display meters or attendant menu has been entered
+  category: attendant
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_83_DISPLAY_METERS_OR_ATTENDANT_MENU_HAS_BEEN_EXITED
+  sas_exception_code: '83'
+  summary: Display meters or attendant menu has been exited
+  category: attendant
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_84_SELF_TEST_OR_OPERATOR_MENU_HAS_BEEN_ENTERED
+  sas_exception_code: '84'
+  summary: Self test or operator menu has been entered
+  category: attendant
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_85_SELF_TEST_OR_OPERATOR_MENU_HAS_BEEN_EXITED
+  sas_exception_code: '85'
+  summary: Self test or operator menu has been exited
+  category: attendant
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_86_GAMING_MACHINE_IS_OUT_OF_SERVICE
+  sas_exception_code: '86'
+  summary: Gaming machine is out of service
+  category: machine-health
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_88_REEL_N_HAS_STOPPED
+  sas_exception_code: '88'
+  summary: Reel n has stopped
+  category: game-play
+  standard_fields_only: false
+  data_fields:
+  - PhysicalStop
+  - ReelNum
+- type: SAS_EVENT_CODE_89_COIN_CREDIT_WAGERED
+  sas_exception_code: '89'
+  summary: Coin credit wagered
+  category: game-play
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_8A_GAME_RECALL_ENTRY_HAS_BEEN_DISPLAYED
+  sas_exception_code: 8A
+  summary: Game recall entry has been displayed
+  category: game-play
+  standard_fields_only: false
+  data_fields:
+  - GameNumber
+  - HostIDPlayer
+  - RecallIndex
+- type: SAS_EVENT_CODE_8C_GAME_SELECTED
+  sas_exception_code: 8C
+  summary: Game selected
+  category: game-play
+  standard_fields_only: false
+  data_fields:
+  - GameNumber
+- type: SAS_EVENT_CODE_98_POWER_OFF_CARD_CAGE_ACCESS
+  sas_exception_code: '98'
+  summary: Power off card cage access
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_99_POWER_OFF_SLOT_DOOR_ACCESS
+  sas_exception_code: '99'
+  summary: Power off slot door access
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_9A_POWER_OFF_CASHBOX_DOOR_ACCESS
+  sas_exception_code: 9A
+  summary: Power off cashbox door access
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_EVENT_CODE_9B_POWER_OFF_DROP_DOOR_ACCESS
+  sas_exception_code: 9B
+  summary: Power off drop door access
+  category: doors-and-security
+  standard_fields_only: true
+- type: SAS_POLL_1B_SEND_HANDPAY_INFORMATION
+  sas_poll_code: 1B
+  summary: Send handpay information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - PartialPayAmount
+  - ProgressiveGroup
+  - ResetId
+  - Unused
+  - Amount
+  - Level
+- type: SAS_POLL_1F_SEND_GAMING_MACHINE_ID_AND_INFORMATION
+  sas_poll_code: 1F
+  summary: Send gaming machine id and information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - PaytableId
+  - ProgressiveGroup
+  - AdditionalId
+  - BasePercentage
+  - Denomination
+  - GameId
+  - GameOptions
+  - MaxBet
+- type: SAS_POLL_3D_SEND_CASH_OUT_TICKET_INFORMATION
+  sas_poll_code: 3D
+  summary: Send cash out ticket information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - AmountInCents
+  - HostIDPlayer
+  - TicketNumber
+- type: SAS_POLL_48_SEND_LAST_ACCEPTED_BILL_INFORMATION
+  sas_poll_code: '48'
+  summary: Send last accepted bill information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - Bills
+  - Country
+  - Denom
+- type: SAS_POLL_4F_SEND_CURRENT_HOPPER_STATUS
+  sas_poll_code: 4F
+  summary: Send current hopper status
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - Length
+  - Level
+  - PercentFull
+  - Status
+- type: SAS_POLL_51_SEND_TOTAL_NUMBER_OF_GAMES_IMPLEMENTED
+  sas_poll_code: '51'
+  summary: Send total number of games implemented
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - NumberOfGames
+- type: SAS_POLL_54_SEND_SAS_VERSION_ID_AND_GAMING_MACHINE_SERIAL_NUMBER
+  sas_poll_code: '54'
+  summary: Send sas version id and gaming machine serial number
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - SasVersionNumber
+  - SerialNumber
+  - Length
+- type: SAS_POLL_55_SEND_SELECTED_GAME_NUMBER
+  sas_poll_code: '55'
+  summary: Send selected game number
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - SelectedGameNumber
+- type: SAS_POLL_56_SAS_SEND_ENABLED_GAME_NUMBERS
+  sas_poll_code: '56'
+  summary: Sas send enabled game numbers
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - EnabledGameNumbers
+  - Length
+  - NumberOfGames
+- type: SAS_POLL_8F_SEND_PHYSICAL_REEL_STOP_INFORMATION
+  sas_poll_code: 8F
+  summary: Send physical reel stop information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - PhysicalReelStops
+- type: SAS_POLL_A0_SEND_ENABLED_FEATURES
+  sas_poll_code: A0
+  summary: Send enabled features
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - Features
+  - GameNumber
+  - Reserved
+- type: SAS_POLL_A8_ENABLE_JACKPOT_HANDPAY_RESET_METHOD
+  sas_poll_code: A8
+  summary: Enable jackpot handpay reset method
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - AckCode
+- type: SAS_POLL_FF_REAL_TIME_EXCEPTION
+  sas_poll_code: FF
+  summary: Real time exception
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - HostIDPlayer
+- type: SendCurrentHopperStatus
+  summary: Send Current Hopper Status
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - Length
+  - Level
+  - PercentFull
+  - Status
+- type: SendEnabledFeatures
+  summary: Send Enabled Features
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - GameNumber
+  - Reserved
+  - Features
+- type: SendEnabledGameNumbers
+  summary: Send Enabled Game Numbers
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - EnabledGameNumbers
+  - Length
+  - NumberOfGames
+- type: SendGamingMachineIDAndInformation
+  summary: Send Gaming Machine I D And Information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - PaytableId
+  - ProgressiveGroup
+  - AdditionalId
+  - BasePercentage
+  - Denomination
+  - GameId
+  - GameOptions
+  - MaxBet
+- type: SendLastAcceptedBillInformation
+  summary: Send Last Accepted Bill Information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - Denom
+  - Bills
+  - Country
+- type: SendPhysicalReelStopInformation
+  summary: Send Physical Reel Stop Information
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - PhysicalReelStops
+- type: SendSASVersionIDAndGamingMachineSerialNumber
+  summary: Send S A S Version I D And Gaming Machine Serial Number
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - Length
+  - SasVersionNumber
+  - SerialNumber
+- type: SendSelectedGameNumber
+  summary: Send Selected Game Number
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - SelectedGameNumber
+- type: SendTotalNumberOfGamesImplemented
+  summary: Send Total Number Of Games Implemented
+  category: machine-and-game-configuration
+  standard_fields_only: false
+  data_fields:
+  - NumberOfGames
